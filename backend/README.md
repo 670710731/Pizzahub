@@ -14,6 +14,17 @@ new database with Supabase SQL Editor or `psql "$DATABASE_URL" -v ON_ERROR_STOP=
 when connecting from Render. The backend uses pgx simple-protocol mode and a
 small connection pool for pooler compatibility.
 
+To load the optional 12-pizza demo catalog after creating the schema, run
+`psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f seed.sql` (or paste `seed.sql` into
+Supabase SQL Editor). The seed file is safe to rerun for its sample slugs, but
+it replaces their categories, images, and variants. Descriptions are original
+summaries of common pizza types, informed by the [pizza overview](https://en.wikipedia.org/wiki/Pizza)
+and [Neapolitan pizza](https://en.wikipedia.org/wiki/Neapolitan_pizza); prices
+are illustrative, not restaurant quotes. Images are externally hosted demo
+photos from Unsplash and may not exactly match each recipe; replace them with
+your own properly licensed product photos before presenting them as real menu
+items.
+
 Required environment variables are `DATABASE_URL` and `JWT_SECRET` (at least
 32 random bytes). `PORT` is used by Render; `HTTP_ADDR` can override the listen
 address. `ALLOWED_ORIGINS` is a comma-separated list of exact frontend origins,

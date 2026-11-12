@@ -90,13 +90,21 @@ func (s *Store) ListPizzas(ctx context.Context, page, pageSize int, category, so
 	}
 	query := fmt.Sprintf(`
 		SELECT p.id, p.name, p.slug, p.description, p.status,
-		       COALESCE(rating.rating_average, 0)::float8, COALESCE(rating.review_count, 0)
+		       COALESCE(rating.rating_average, 0)::float8, COALESCE(rating.review_count, 0),
+		       cover.image_url, cover.alt_text, cover.sort_order
 		FROM pizzas p
 		LEFT JOIN LATERAL (
 			SELECT AVG(r.rating) AS rating_average, COUNT(*) AS review_count
 			FROM reviews r
 			WHERE r.pizza_id = p.id AND r.status = 'published'
 		) rating ON TRUE
+		LEFT JOIN LATERAL (
+			SELECT image_url, alt_text, sort_order
+			FROM pizza_images
+			WHERE pizza_id = p.id
+			ORDER BY sort_order
+			LIMIT 1
+		) cover ON TRUE
 		WHERE p.status = 'published'
 		  AND ($1 = '' OR EXISTS (
 			SELECT 1
@@ -114,8 +122,25 @@ func (s *Store) ListPizzas(ctx context.Context, page, pageSize int, category, so
 	pizzas := make([]Pizza, 0)
 	for rows.Next() {
 		var pizza Pizza
-		if err := rows.Scan(&pizza.ID, &pizza.Name, &pizza.Slug, &pizza.Description, &pizza.Status, &pizza.RatingAverage, &pizza.ReviewCount); err != nil {
+		var imageURL, altText sql.NullString
+		var imageSortOrder sql.NullInt64
+		if err := rows.Scan(
+			&pizza.ID, &pizza.Name, &pizza.Slug, &pizza.Description, &pizza.Status,
+			&pizza.RatingAverage, &pizza.ReviewCount, &imageURL, &altText, &imageSortOrder,
+		); err != nil {
 			return nil, 0, fmt.Errorf("scan pizza: %w", err)
+		}
+		pizza.Images = make([]Image, 0, 1)
+		if imageURL.Valid {
+			sortOrder := 0
+			if imageSortOrder.Valid {
+				sortOrder = int(imageSortOrder.Int64)
+			}
+			pizza.Images = append(pizza.Images, Image{
+				URL:       imageURL.String,
+				AltText:   altText.String,
+				SortOrder: sortOrder,
+			})
 		}
 		pizzas = append(pizzas, pizza)
 	}
