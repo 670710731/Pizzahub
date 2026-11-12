@@ -5,9 +5,12 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"os"
+	"strconv"
 	"time"
 
-	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/stdlib"
 )
 
 var (
@@ -21,12 +24,26 @@ type Store struct {
 }
 
 func Open(ctx context.Context, dsn string) (*Store, error) {
-	db, err := sql.Open("pgx", dsn)
+	config, err := pgx.ParseConfig(dsn)
 	if err != nil {
-		return nil, fmt.Errorf("open database: %w", err)
+		return nil, fmt.Errorf("parse database configuration: %w", err)
 	}
-	db.SetMaxOpenConns(20)
-	db.SetMaxIdleConns(5)
+	config.DefaultQueryExecMode = pgx.QueryExecModeSimpleProtocol
+	db := stdlib.OpenDB(*config)
+	maxOpenConns := 5
+	if configured := os.Getenv("DB_MAX_OPEN_CONNS"); configured != "" {
+		maxOpenConns, err = strconv.Atoi(configured)
+		if err != nil || maxOpenConns < 1 {
+			_ = db.Close()
+			return nil, errors.New("DB_MAX_OPEN_CONNS must be a positive integer")
+		}
+	}
+	db.SetMaxOpenConns(maxOpenConns)
+	if maxOpenConns < 5 {
+		db.SetMaxIdleConns(maxOpenConns)
+	} else {
+		db.SetMaxIdleConns(2)
+	}
 	db.SetConnMaxLifetime(30 * time.Minute)
 	if err := db.PingContext(ctx); err != nil {
 		_ = db.Close()

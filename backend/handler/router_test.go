@@ -18,6 +18,7 @@ func TestRouterHealthAndProtectedReviewRoute(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	router := NewRouter(&store.Store{}, tokens, logger, nil)
 

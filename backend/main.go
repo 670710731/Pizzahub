@@ -50,7 +50,11 @@ func run(logger *slog.Logger) error {
 
 	address := os.Getenv("HTTP_ADDR")
 	if address == "" {
-		address = ":8080"
+		port := os.Getenv("PORT")
+		if port == "" {
+			port = "8080"
+		}
+		address = ":" + port
 	}
 	server := &http.Server{
 		Addr:              address,
@@ -90,9 +94,12 @@ func splitList(value string) []string {
 	if strings.TrimSpace(value) == "" {
 		return nil
 	}
-	values := strings.Split(value, ",")
-	for i := range values {
-		values[i] = strings.TrimSpace(values[i])
+	parts := strings.Split(value, ",")
+	values := make([]string, 0, len(parts))
+	for _, part := range parts {
+		if origin := strings.TrimSpace(part); origin != "" {
+			values = append(values, origin)
+		}
 	}
 	return values
 }

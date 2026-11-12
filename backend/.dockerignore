@@ -1,0 +1,5 @@
+.env
+.env.*
+.jwt_secret
+.git
+server

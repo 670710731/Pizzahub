@@ -1,4 +1,6 @@
-const API_BASE = process.env.REACT_APP_API_URL || "/api/v1";
+function getAPIBase() {
+  return (import.meta.env.VITE_API_URL || "/api/v1").replace(/\/+$/, "");
+}
 
 export function getToken() {
   return localStorage.getItem("pizzahub_token");
@@ -9,7 +11,7 @@ export async function request(path, options = {}) {
   const token = getToken();
   if (token) headers.Authorization = `Bearer ${token}`;
 
-  const response = await fetch(`${API_BASE}${path}`, { ...options, headers });
+  const response = await fetch(`${getAPIBase()}${path}`, { ...options, headers });
   const contentType = response.headers.get("content-type") || "";
   const data = contentType.includes("application/json") ? await response.json() : null;
 

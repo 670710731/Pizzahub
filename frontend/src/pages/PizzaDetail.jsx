@@ -34,7 +34,7 @@ export default function PizzaDetail() {
     </div>
     <h2 className="section-title">รีวิวจากสมาชิก</h2>
     {reviews.map(r=><article className="card card-body mb-3" key={r.id}>
-      <strong>{r.title || "รีวิวจากสมาชิก"}</strong><p className="rating">{"★".repeat(r.rating || 0)}</p><p>{r.body}</p>
+      <strong>{r.title || "รีวิวจากสมาชิก"}</strong><p className="muted text-sm">โดย {r.display_name}</p><p className="rating">{"★".repeat(r.rating || 0)}</p><p>{r.body}</p>
     </article>)}
     {!reviews.length && <p className="muted mb-4">ยังไม่มีรีวิว เป็นคนแรกที่รีวิวได้เลย</p>}
     {user ? <ReviewForm slug={slug} onCreated={loadReviews}/> : <p className="notice">กรุณา <Link className="font-bold" to="/login">เข้าสู่ระบบ</Link> เพื่อเขียนรีวิว</p>}

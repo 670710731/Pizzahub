@@ -81,7 +81,7 @@ CREATE TABLE reviews (
     rating SMALLINT NOT NULL CHECK (rating BETWEEN 1 AND 5),
     title TEXT NOT NULL DEFAULT '',
     body TEXT NOT NULL DEFAULT '',
-    status TEXT NOT NULL DEFAULT 'published'
+    status TEXT NOT NULL DEFAULT 'pending'
         CHECK (status IN ('pending', 'published', 'rejected')),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),

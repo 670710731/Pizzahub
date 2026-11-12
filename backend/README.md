@@ -1,14 +1,24 @@
 # Pizzahub backend
 
+## Run locally
+
+The backend reads environment variables directly; it does not load `.env`.
+Copy `.env.example` to `.env` for reference, then export its values in your
+shell or configure them in your IDE.
+
 ## Database
 
-The schema targets PostgreSQL. From `backend`, run
-`psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f schema.sql` against a new database.
+The schema targets PostgreSQL, including Supabase. Apply `schema.sql` once to a
+new database with Supabase SQL Editor or `psql "$DATABASE_URL" -v ON_ERROR_STOP=1
+-f schema.sql`. Use Supabase's transaction pooler URL with `sslmode=require`
+when connecting from Render. The backend uses pgx simple-protocol mode and a
+small connection pool for pooler compatibility.
 
-Set `DATABASE_URL`, `JWT_SECRET` (at least 32 characters of random data),
-`HTTP_ADDR` (optional; defaults to `:8080`), and
-`ALLOWED_ORIGINS` (optional comma-separated exact origins) before starting
-with `go run .`.
+Required environment variables are `DATABASE_URL` and `JWT_SECRET` (at least
+32 random bytes). `PORT` is used by Render; `HTTP_ADDR` can override the listen
+address. `ALLOWED_ORIGINS` is a comma-separated list of exact frontend origins,
+including scheme and hostname. `DB_MAX_OPEN_CONNS` is optional and defaults to 5.
+Run locally with `go run .`.
 
 The schema keeps a pizza's page content (`pizzas`) separate from its categories,
 gallery images, and purchasable size/price options. Reviews belong to both a
@@ -54,9 +64,12 @@ from the request body. Admin routes require an admin role.
 - Use `updated_at` from the application on updates, or add a shared database
   trigger if timestamp management is moved into PostgreSQL.
 - Registration always creates a `customer`. Promote the initial administrator
-  directly in PostgreSQL after registering: `UPDATE users SET role = 'admin' WHERE email = 'admin@example.com';`
+  directly in PostgreSQL after registering:
+  `UPDATE users SET role = 'admin' WHERE email = 'admin@example.com';`
 - `PUT` replaces all pizza fields and associated categories, images, and variants.
   `DELETE` archives the pizza rather than erasing its review history.
+- New reviews enter `pending` moderation and are not shown publicly until an
+  admin publishes them.
 - Access tokens are signed, stateless bearer tokens and expire after 24 hours.
   Changing a user's role takes effect for new tokens; use short token lifetimes
   or add token revocation if immediate revocation becomes a requirement.

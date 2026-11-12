@@ -68,13 +68,13 @@ func (s *Store) SaveReview(ctx context.Context, slug string, userID int64, ratin
 	var review Review
 	var createdAt sql.NullTime
 	err := s.DB.QueryRowContext(ctx, `
-		INSERT INTO reviews (pizza_id, user_id, rating, title, body)
-		SELECT p.id, $2, $3, $4, $5
+		INSERT INTO reviews (pizza_id, user_id, rating, title, body, status)
+		SELECT p.id, $2, $3, $4, $5, 'pending'
 		FROM pizzas p
 		WHERE p.slug = $1 AND p.status = 'published'
 		ON CONFLICT (pizza_id, user_id)
 		DO UPDATE SET rating = EXCLUDED.rating, title = EXCLUDED.title,
-		              body = EXCLUDED.body, status = 'published', updated_at = NOW()
+		              body = EXCLUDED.body, status = 'pending', updated_at = NOW()
 		RETURNING id, pizza_id, user_id, rating, title, body, status, created_at`,
 		slug, userID, rating, title, body,
 	).Scan(&review.ID, &review.PizzaID, &review.UserID, &review.Rating, &review.Title, &review.Body, &review.Status, &createdAt)
