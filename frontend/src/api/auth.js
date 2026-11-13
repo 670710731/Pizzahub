@@ -12,6 +12,12 @@ export async function register(details) {
   localStorage.setItem("pizzahub_user", JSON.stringify(result.user));
   return result;
 }
+export function changePassword(currentPassword, newPassword) {
+  return request("/auth/change-password", {
+    method: "POST",
+    body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+  });
+}
 export function logout() {
   localStorage.removeItem("pizzahub_token");
   localStorage.removeItem("pizzahub_user");

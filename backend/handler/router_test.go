@@ -33,4 +33,10 @@ func TestRouterHealthAndProtectedReviewRoute(t *testing.T) {
 	if review.Code != http.StatusUnauthorized {
 		t.Fatalf("review status = %d, want %d", review.Code, http.StatusUnauthorized)
 	}
+
+	changePassword := httptest.NewRecorder()
+	router.ServeHTTP(changePassword, httptest.NewRequest(http.MethodPost, "/api/v1/auth/change-password", strings.NewReader(`{"current_password":"old-password","new_password":"new-password"}`)))
+	if changePassword.Code != http.StatusUnauthorized {
+		t.Fatalf("change password status = %d, want %d", changePassword.Code, http.StatusUnauthorized)
+	}
 }

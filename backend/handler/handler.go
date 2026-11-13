@@ -24,6 +24,7 @@ func NewRouter(database *store.Store, tokens *auth.TokenService, logger *slog.Lo
 	})
 	mux.HandleFunc("POST /api/v1/auth/register", authHandlers.register)
 	mux.HandleFunc("POST /api/v1/auth/login", authHandlers.login)
+	mux.Handle("POST /api/v1/auth/change-password", mw.RequireAuth(tokens, false, http.HandlerFunc(authHandlers.changePassword)))
 	mux.HandleFunc("GET /api/v1/pizzas", listPizzas(database, logger))
 	mux.HandleFunc("GET /api/v1/pizzas/{slug}", getPizza(database, logger))
 	mux.HandleFunc("GET /api/v1/pizzas/{slug}/reviews", reviewHandlers.list)

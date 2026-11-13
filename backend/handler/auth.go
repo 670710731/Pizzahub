@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/670710731/Pizzahub/backend/auth"
+	"github.com/670710731/Pizzahub/backend/mw"
 	"github.com/670710731/Pizzahub/backend/store"
 )
 
@@ -79,6 +80,54 @@ func (h *authHandler) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.writeToken(w, http.StatusOK, user)
+}
+
+func (h *authHandler) changePassword(w http.ResponseWriter, r *http.Request) {
+	identity, ok := mw.CurrentUser(r.Context())
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "authentication required")
+		return
+	}
+	var input struct {
+		CurrentPassword string `json:"current_password"`
+		NewPassword     string `json:"new_password"`
+	}
+	if !decodeJSON(w, r, &input) {
+		return
+	}
+	user, err := h.store.UserByID(r.Context(), identity.UserID)
+	if errors.Is(err, store.ErrNotFound) {
+		writeError(w, http.StatusUnauthorized, "account is unavailable")
+		return
+	}
+	if err != nil {
+		h.logger.Error("find user for password change", "error", err)
+		writeError(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
+	if !auth.VerifyPassword(user.PasswordHash, input.CurrentPassword) {
+		writeError(w, http.StatusUnauthorized, "current password is incorrect")
+		return
+	}
+	newHash, err := auth.HashPassword(input.NewPassword)
+	if errors.Is(err, auth.ErrInvalidPassword) {
+		writeError(w, http.StatusBadRequest, "new password must be 8-72 bytes")
+		return
+	}
+	if err != nil {
+		h.logger.Error("hash new password", "error", err)
+		writeError(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
+	if err := h.store.UpdatePasswordHash(r.Context(), identity.UserID, user.PasswordHash, newHash); errors.Is(err, store.ErrConflict) {
+		writeError(w, http.StatusConflict, "password changed concurrently; please try again")
+		return
+	} else if err != nil {
+		h.logger.Error("update password", "error", err)
+		writeError(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h *authHandler) writeToken(w http.ResponseWriter, status int, user store.User) {

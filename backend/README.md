@@ -53,6 +53,7 @@ Use JSON and version public routes under `/api/v1`.
 | `POST` | `/api/v1/pizzas/{slug}/reviews` | Create or update the signed-in user's review |
 | `POST` | `/api/v1/auth/register` | Register a customer |
 | `POST` | `/api/v1/auth/login` | Authenticate and issue an access token |
+| `POST` | `/api/v1/auth/change-password` | Change the signed-in user's password (requires current password) |
 | `GET` | `/api/v1/categories` | List categories |
 | `GET/POST` | `/api/v1/admin/categories` | List or create categories (admin) |
 | `PUT/DELETE` | `/api/v1/admin/categories/{id}` | Replace or delete a category (admin) |
@@ -71,6 +72,10 @@ from the request body. Admin routes require an admin role.
   (`THB` by default); do not represent money as floating-point values in Go.
 - Use parameterized SQL for all database queries.
 - Store password hashes, never plaintext passwords.
+- Password changes require authentication and the current password; new passwords
+  must be 8-72 bytes.
+- Access tokens are stateless and remain valid until their 24-hour expiry after a
+  password change; changing a password does not revoke other active tokens.
 - Validate pagination and allowed sort values at the API boundary.
 - Use `updated_at` from the application on updates, or add a shared database
   trigger if timestamp management is moved into PostgreSQL.
